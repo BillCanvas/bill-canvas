@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { DndContext, useDraggable } from "@dnd-kit/core";
+import { House } from "lucide-react";
+import Link from "next/link";
 
 // Define Cube Type
 interface Cube {
@@ -21,7 +23,7 @@ export default function CreatePage() {
     const id = Date.now();
     setCubes((prevCubes) => [
       ...prevCubes,
-      { id, x: 0, y: 0, color: "#FFD1DC", content: "", css: {} },
+      { id, x: 100, y: 100, color: "#FFD1DC", content: "", css: {} },
     ]);
   };
 
@@ -31,11 +33,37 @@ export default function CreatePage() {
     );
   };
 
+  const handleDragEnd = (event: any) => {
+    const { id } = event.active.data.current || {};
+    const { x, y } = event.delta;
+
+    if (id !== undefined) {
+      setCubes((prevCubes) =>
+        prevCubes.map((cube) =>
+          cube.id === id
+            ? {
+                ...cube,
+                x: cube.x + x,
+                y: cube.y + y,
+              }
+            : cube
+        )
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
       {/* Sidebar */}
       <div className="w-64 p-4 bg-gray-800 text-white border-r border-gray-600">
         <h2 className="text-xl font-bold mb-4">Toolbox</h2>
+        <Link
+          href="/"
+          className="flex flex-row justify-center items-center gap-2 bg-black my-5 px-2 py-2 w-[100px] hover:w-full transition-all duration-300"
+        >
+          <House size={15} />
+          Home
+        </Link>
         <button
           onClick={addCube}
           className="w-full px-4 py-2 mb-4 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
@@ -74,30 +102,7 @@ export default function CreatePage() {
 
       {/* Main Canvas */}
       <div className="flex-grow relative bg-gray-100">
-        <div className="absolute inset-0 grid grid-cols-12 gap-1 bg-gray-300">
-          {Array.from({ length: 144 }).map((_, i) => (
-            <div key={i} className="h-8 bg-gray-200 border border-gray-400"></div>
-          ))}
-        </div>
-
-        <DndContext
-          onDragEnd={(event) => {
-            const { id, delta } = event.active.data.current || {};
-            if (id !== undefined && delta) {
-              setCubes((prevCubes) =>
-                prevCubes.map((cube) =>
-                  cube.id === id
-                    ? {
-                        ...cube,
-                        x: Math.round((cube.x + delta.x) / 32) * 32,
-                        y: Math.round((cube.y + delta.y) / 32) * 32,
-                      }
-                    : cube
-                )
-              );
-            }
-          }}
-        >
+        <DndContext onDragEnd={handleDragEnd}>
           {cubes.map((cube) => (
             <DraggableCube
               key={cube.id}
@@ -118,21 +123,17 @@ interface DraggableCubeProps {
 }
 
 function DraggableCube({ cube, onSelect }: DraggableCubeProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform: draggableTransform,
-  } = useDraggable({
+  const { attributes, listeners, setNodeRef } = useDraggable({
     id: cube.id,
+    data: {
+      id: cube.id,
+    },
   });
 
-  const transform = draggableTransform ?? { x: 0, y: 0 };
-
   const style = {
-    transform: `translate3d(${cube.x + transform.x}px, ${cube.y + transform.y}px, 0)`,
+    transform: `translate(${cube.x}px, ${cube.y}px)`,
     backgroundColor: cube.color,
-    color: "#000", // Ensure text in cubes is visible
+    color: "#000",
   };
 
   return (
